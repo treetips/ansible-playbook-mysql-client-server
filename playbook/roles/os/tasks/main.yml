@@ -1,0 +1,24 @@
+- block:
+
+  - name: yum update
+    yum: name=* state=latest update_cache=yes
+
+  - name: create bash flagment dirctory
+    file: path={{ bash_flagment_dir }} group={{ work_group }} owner={{ work_user }} state=directory
+
+  - name: copy .bash_profile
+    template: src=bash_profile.sh dest=/home/{{ work_user }}/.bash_profile mode=0644 group={{ work_group }} owner={{ work_user }}
+
+  - name: copy .bashrc
+    template: src=bashrc.sh dest=/home/{{ work_user }}/.bashrc mode=0644 group={{ work_group }} owner={{ work_user }}
+
+  - name: install epel
+    yum: name=epel-release state=present
+
+  - name: install 'Development tools'
+    yum: name="@Development tools" state=present
+
+  - name: stop firewall
+    service: name=iptables enabled=false state=stopped
+
+  become: yes

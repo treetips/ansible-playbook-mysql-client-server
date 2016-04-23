@@ -1,0 +1,77 @@
+- block:
+
+  - name: download rpm
+    get_url: url={{ item.url }} dest=/usr/local/src/{{ item.file }} checksum={{ item.checksum }}
+    with_items:
+      - { url: "http://dev.mysql.com/get/Downloads/MySQL-5.5/MySQL-devel-5.5.49-1.rhel5.x86_64.rpm", file: 'MySQL-devel-5.5.49-1.rhel5.x86_64.rpm', checksum: 'md5:6423f04a071bd8288895347d4217272f' }
+      - { url: "http://dev.mysql.com/get/Downloads/MySQL-5.5/MySQL-server-5.5.49-1.rhel5.x86_64.rpm", file: 'MySQL-server-5.5.49-1.rhel5.x86_64.rpm', checksum: 'md5:d84f892cd8154cdc765bfd4fb68db01e' }
+      - { url: "http://dev.mysql.com/get/Downloads/MySQL-5.5/MySQL-shared-5.5.49-1.rhel5.x86_64.rpm", file: 'MySQL-shared-5.5.49-1.rhel5.x86_64.rpm', checksum: 'md5:a7b9ff67782b57ebabe8a8ca6ddf6a17' }
+
+  - name: uninstall conflict dependencies
+    yum: name="mysql-libs-5.1.73-5.el6_7.1.x86_64" state=absent
+
+  - name: install mysql server
+    yum: name=/usr/local/src/{{ item }} state=present
+    with_items:
+      - "MySQL-devel-5.5.49-1.rhel5.x86_64.rpm"
+      - "MySQL-server-5.5.49-1.rhel5.x86_64.rpm"
+      - "MySQL-shared-5.5.49-1.rhel5.x86_64.rpm"
+
+  - name: copy mysql-server my.cnf
+    template: src=my.cnf.ini dest=/etc/my.cnf mode=0644 group=root owner=root
+
+  - name: create log directory
+    file: path={{ mysql_log_dir }} group=mysql owner=mysql state=directory
+
+  - name: start mysql
+    service: name=mysql enabled=yes state=started
+
+  - name: install ansible-mysql_db-module dependencies
+    pip: name=MySQL-python executable={{ pip_bin_path }} state=present
+
+  - name: change python interpreter
+    set_fact: ansible_python_interpreter=/home/{{ work_user }}/.pyenv/shims/python
+
+  - name: change root user password
+    mysql_user:
+      login_host=localhost
+      login_user=root
+      login_password={{ mysql_root_user_password }}
+      login_port={{ mysql_port }}
+      host={{ mysql_host }}
+      name=root
+      password={{ mysql_root_user_password }}
+      check_implicit_admin=yes
+      state=present
+
+  - name: allow remote connect
+    mysql_user:
+      login_host=localhost
+      login_user=root
+      login_password={{ mysql_root_user_password }}
+      login_port={{ mysql_port }}
+      host={{ item.host }}
+      name={{ mysql_user_name }}
+      password={{ mysql_user_password }}
+      priv={{ mysql_shcema_name }}.*:all
+      check_implicit_admin=yes
+      state=present
+    with_items:
+      - { host: 'localhost' }
+      - { host: '127.0.0.1' }
+      - { host: '192.168.%' }
+
+  - name: create database
+    mysql_db:
+      login_host=localhost
+      login_user={{ mysql_user_name }}
+      login_password={{ mysql_user_password }}
+      login_port={{ mysql_port }}
+      db={{ mysql_shcema_name }}
+      encoding=utf8mb4
+      state=present
+
+  - name: restore python interpreter
+    set_fact: ansible_python_interpreter="/usr/bin/python"
+
+  become: yes

@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+VM_NUMBER = 1
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box = "centos6.5"
+
+	(1..VM_NUMBER).each do |vmNumber|
+		nodeName = "node#{vmNumber}"
+		ipNumber = 30 + vmNumber
+
+		config.vm.define nodeName do |node|
+			node.vm.hostname = nodeName
+			node.vm.network :private_network, ip: "192.168.33.#{ipNumber}"
+			node.vm.provider "virtualbox" do |v|
+				v.customize ["modifyvm", :id, "--memory", 768,  "--cpus", 1]
+			end
+			node.vm.provision :shell, :inline => " \
+				useradd worker && \
+				echo 'worker' | passwd --stdin worker && \
+				echo 'worker	ALL=(ALL) 	ALL' >> /etc/sudoers \
+			"
+		end
+	end
+end

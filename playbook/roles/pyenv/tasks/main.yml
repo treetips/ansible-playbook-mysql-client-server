@@ -1,0 +1,36 @@
+- name: install python2.7 dependencies
+  yum: name={{ item }} state=present
+  with_items:
+    - git
+    - sqlite
+    - openssl-devel
+    - zlib-devel
+    - bzip2
+    - bzip2-devel
+    - readline-devel
+    - sqlite-devel
+  become: yes
+
+- name: install pyenv
+  git: repo=git://github.com/yyuu/pyenv.git dest={{ pyenv_dir }} update=no accept_hostkey=yes
+
+- name: install pyenv-pip-rehash
+  git: repo=git://github.com/yyuu/pyenv-pip-rehash.git dest={{ pyenv_dir }}/plugins/pyenv-pip-rehash update=no accept_hostkey=yes
+
+- name: copy bash fragment
+  template: src=10_pyenv.sh dest={{ bash_flagment_dir }} mode=0744 group={{ work_group }} owner={{ work_user }}
+
+- name: check whether a specific version of python is installed
+  shell: "{{ pyenv_bin_path }} versions | grep {{ python_version }} | tr '*' ' ' | sed -e 's/\\s\\+//' | cut -f1 -d ' '"
+  register: pyenv_python_version
+
+- block:
+  - name: install python v2.7
+    command: "{{ pyenv_bin_path }} install {{ python_version }}"
+
+  - name: set pyenv global
+    command: "{{ pyenv_bin_path }} global {{ python_version}}"
+  when: pyenv_python_version.stdout != '{{ python_version }}'
+
+- name: update pip
+  pip: name=pip executable={{ pip_bin_path }} state=latest

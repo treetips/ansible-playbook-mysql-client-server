@@ -1,0 +1,8 @@
+- hosts: db
+  become: no
+  roles:
+    - account
+    - os
+    - pyenv
+    - mysql-client
+    - mysql-server

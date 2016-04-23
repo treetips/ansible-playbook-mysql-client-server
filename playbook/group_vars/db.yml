@@ -1,0 +1,19 @@
+work_group: "worker"
+work_user: "worker"
+work_user_password: "worker"
+
+bash_flagment_dir: "/home/{{ work_user }}/.bash.d"
+
+python_version: "2.7.11"
+pyenv_dir: "/home/{{ work_user }}/.pyenv"
+pyenv_bin_path: "{{ pyenv_dir }}/bin/pyenv"
+
+pip_bin_path: "{{ pyenv_dir }}/shims/pip"
+
+mysql_host: "192.168.33.31"
+mysql_port: "3306"
+mysql_shcema_name: "hoge"
+mysql_user_name: "worker"
+mysql_user_password: "worker"
+mysql_root_user_password: "fuga"
+mysql_log_dir: "/var/log/mysql"

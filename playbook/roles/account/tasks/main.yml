@@ -1,0 +1,24 @@
+- block:
+
+  - name: install user module dependencies
+    yum: name=libselinux-python
+         state=present
+
+  - name: add group
+    group: name={{ work_group }}
+           state=present
+
+  - name: add admin user
+    user: group={{ work_group }}
+          name={{ work_user }}
+          password={{ work_user_password | password_hash('sha512') }}
+          home=/home/{{ work_user }}
+          shell=/bin/bash
+          createhome=yes
+          generate_ssh_key=no
+          state=present
+
+  - name: modify sudoers
+    lineinfile: "dest=/etc/sudoers backup=no state=present regexp='^{{ work_user }}' line='{{ work_user }} ALL=(ALL) ALL'"
+
+  become: yes

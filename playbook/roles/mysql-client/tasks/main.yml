@@ -1,0 +1,19 @@
+- block:
+
+  - name: download rpm
+    get_url: url={{ item.url }} dest=/usr/local/src/{{ item.file }} checksum={{ item.checksum }}
+    with_items:
+      - { url: "http://dev.mysql.com/get/Downloads/MySQL-5.5/MySQL-client-5.5.49-1.rhel5.x86_64.rpm", file: 'MySQL-client-5.5.49-1.rhel5.x86_64.rpm', checksum: 'md5:543ef6a181e5d18eda5a175586fc4c82' }
+
+  - name: install mysql client
+    yum: name=/usr/local/src/{{ item }} state=present
+    with_items:
+      - "MySQL-client-5.5.49-1.rhel5.x86_64.rpm"
+
+  - name: copy my.cnf
+    template: src=my.cnf.ini dest=/home/{{ work_user }}/.my.cnf mode=0600 group={{ work_group }} owner={{ work_user }}
+
+  - name: copy connect script
+    copy: src=mysql.sh dest=/home/{{ work_user }}/mysql.sh mode=0755 group={{ work_group }} owner={{ work_user }}
+
+  become: yes
